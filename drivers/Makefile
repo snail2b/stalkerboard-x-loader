@@ -48,6 +48,10 @@ ifeq ($(BOARD), overo)
 COBJS 	+= k9f1g08r0a.o
 endif
 
+ifeq ($(BOARD), omap3stalker)
+COBJS	+= k9f1g08r0a.o
+endif
+
 ifeq ($(BOARD), omap2420h4) 
 COBJS 	+= k9k1216.o
 endif
