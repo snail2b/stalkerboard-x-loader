@@ -340,6 +340,42 @@ typedef enum {
 		(HYNIX_XSR_165 << 0) | (HYNIX_TXP_165 << 8) | \
 		(HYNIX_TWTR_165 << 16))
 
+/* Hynix part for some of Stalker board (200MHz optimized)
+* ACTIMA
+* TDAL = 6
+* TDPL (Twr) = 3
+* TRRD = 2
+* TRCD = 4
+* TRP = 3
+* TRAS = 8
+* TRC = 11
+* TRFC = 18
+* ACTIMB
+* TWTR = 2
+* TCKE = 1
+* TXP = 1
+* TXSR = 28
+*/
+#define HYNIX_TDAL_200 6
+#define HYNIX_TDPL_200 3
+#define HYNIX_TRRD_200 2
+#define HYNIX_TRCD_200 4
+#define HYNIX_TRP_200 3
+#define HYNIX_TRAS_200 8
+#define HYNIX_TRC_200 11
+#define HYNIX_TRFC_200 18
+#define HYNIX_V_ACTIMA_200 ((HYNIX_TRFC_200 << 27) | (HYNIX_TRC_200 << 22) | \
+(HYNIX_TRAS_200 << 18) | (HYNIX_TRP_200 << 15) | \
+(HYNIX_TRCD_200 << 12) | (HYNIX_TRRD_200 << 9) | \
+(HYNIX_TDPL_200 << 6) | (HYNIX_TDAL_200))
+
+#define HYNIX_TWTR_200 2
+#define HYNIX_TCKE_200 1
+#define HYNIX_TXP_200 1
+#define HYNIX_XSR_200 28
+#define HYNIX_V_ACTIMB_200 (((HYNIX_TCKE_200 << 12) | (HYNIX_XSR_200 << 0)) | \
+(HYNIX_TXP_200 << 8) | (HYNIX_TWTR_200 << 16))
+
 /* New and compatability speed defines */
 #if defined(PRCM_CLK_CFG2_200MHZ) || defined(PRCM_CONFIG_II) || defined(PRCM_CONFIG_5B)
 # define L3_100MHZ   /* Use with <= 100MHz SDRAM */
