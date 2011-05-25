@@ -392,10 +392,39 @@ u32 wait_on_value(u32 read_bit_mask, u32 match_value, u32 read_addr, u32 bound)
 }
 
 #ifdef CFG_3430SDRAM_DDR
+/********************************************************
+ *  mem_size_valid() - test used to see if mem size was
+ *             right.
+ *******************************************************/
+u32 mem_size_valid(u32 size)
+{
+        u32 val1, val2, addr;
+        u32 pattern_a = 0x12345678;
+        u32 pattern_b = 0x87654321;
+
+        size = size >> 1;
+
+        addr = OMAP34XX_SDRC_CS0 + size;
+
+        __raw_writel(0x0, OMAP34XX_SDRC_CS0 + 0x400);      /* clear pos A */
+        __raw_writel(0x0, addr + 0x400);      /* clear pos A */
+        __raw_writel(pattern_a, addr + 0x400);          /* pattern to pos B */
+        __raw_writel(0x0, addr + 4);          /* remove pattern off the bus */
+        __raw_writel(pattern_b, OMAP34XX_SDRC_CS0 + 0x400);          /* pattern to pos B */
+        __raw_writel(0x0, addr + 4);          /* remove pattern off the bus */
+        val1 = __raw_readl(addr + 0x400);     /* get pos A value */
+        val2 = __raw_readl(OMAP34XX_SDRC_CS0 + 0x400);             /* get val2 */
+
+        if ((val1 != pattern_a) || (val1 == val2))   /* see if pos A val changed */
+                return 0;
+        else
+		return 1;
+}
+
 /*********************************************************************
  * config_3430sdram_ddr() - Init DDR on 3430SDP dev board.
  *********************************************************************/
-void config_3430sdram_ddr(void)
+void __config_3430sdram_ddr(u32 size)
 {
 	/* reset sdrc controller */
 	__raw_writel(SOFTRESET, SDRC_SYSCONFIG);
@@ -405,22 +434,21 @@ void config_3430sdram_ddr(void)
 	/* setup sdrc to ball mux */
 	__raw_writel(SDP_SDRC_SHARING, SDRC_SHARING);
 
-	switch (get_cpu_family()) {
-	case CPU_OMAP34XX: /* Micron 1286MB/256MB, 1/2 banks of 128MB */
-		__raw_writel(0x1, SDRC_CS_CFG); /* 128MB/bank */
-		__raw_writel(SDP_SDRC_MDCFG_0_DDR, SDRC_MCFG_0);
-		__raw_writel(SDP_SDRC_MDCFG_0_DDR, SDRC_MCFG_1);
-		__raw_writel(MICRON_V_ACTIMA_165, SDRC_ACTIM_CTRLA_0);
-		__raw_writel(MICRON_V_ACTIMB_165, SDRC_ACTIM_CTRLB_0);
-		__raw_writel(MICRON_V_ACTIMA_165, SDRC_ACTIM_CTRLA_1);
-		__raw_writel(MICRON_V_ACTIMB_165, SDRC_ACTIM_CTRLB_1);
-		__raw_writel(SDP_3430_SDRC_RFR_CTRL_165MHz, SDRC_RFR_CTRL_0);
-		__raw_writel(SDP_3430_SDRC_RFR_CTRL_165MHz, SDRC_RFR_CTRL_1);
-		break;
-	case CPU_OMAP36XX: /* Hynix 256MB/512MB, 1/2 banks of 256MB */
+	switch (size){
+	case SZ_256M:
 		__raw_writel(0x2, SDRC_CS_CFG); /* 256MB/bank */
 		__raw_writel(SDP_SDRC_MDCFG_0_DDR_HYNIX, SDRC_MCFG_0);
 		__raw_writel(SDP_SDRC_MDCFG_0_DDR_HYNIX, SDRC_MCFG_1);
+		break;	
+	case SZ_128M:
+	default:
+		__raw_writel(0x1, SDRC_CS_CFG); /* 128MB/bank */
+		__raw_writel(SDP_SDRC_MDCFG_0_DDR, SDRC_MCFG_0);
+		__raw_writel(SDP_SDRC_MDCFG_0_DDR, SDRC_MCFG_1);
+		break;
+	}
+	switch (get_cpu_family()) {
+	case CPU_OMAP36XX: /* Hynix 256MB/512MB, 1/2 banks of 256MB */
 		__raw_writel(HYNIX_V_ACTIMA_200, SDRC_ACTIM_CTRLA_0);
 		__raw_writel(HYNIX_V_ACTIMB_200, SDRC_ACTIM_CTRLB_0);
 		__raw_writel(HYNIX_V_ACTIMA_200, SDRC_ACTIM_CTRLA_1);
@@ -428,16 +456,15 @@ void config_3430sdram_ddr(void)
 		__raw_writel(SDP_3430_SDRC_RFR_CTRL_200MHz, SDRC_RFR_CTRL_0);
 		__raw_writel(SDP_3430_SDRC_RFR_CTRL_200MHz, SDRC_RFR_CTRL_1);
 		break;
+	case CPU_OMAP34XX: /* Micron 1286MB/256MB, 1/2 banks of 128MB */
 	default:
-		__raw_writel(0x1, SDRC_CS_CFG); /* 128MB/bank */
-		__raw_writel(SDP_SDRC_MDCFG_0_DDR, SDRC_MCFG_0);
-		__raw_writel(SDP_SDRC_MDCFG_0_DDR, SDRC_MCFG_1);
 		__raw_writel(MICRON_V_ACTIMA_165, SDRC_ACTIM_CTRLA_0);
 		__raw_writel(MICRON_V_ACTIMB_165, SDRC_ACTIM_CTRLB_0);
 		__raw_writel(MICRON_V_ACTIMA_165, SDRC_ACTIM_CTRLA_1);
 		__raw_writel(MICRON_V_ACTIMB_165, SDRC_ACTIM_CTRLB_1);
 		__raw_writel(SDP_3430_SDRC_RFR_CTRL_165MHz, SDRC_RFR_CTRL_0);
 		__raw_writel(SDP_3430_SDRC_RFR_CTRL_165MHz, SDRC_RFR_CTRL_1);
+		break;
 	}
 
 	__raw_writel(SDP_SDRC_POWER_POP, SDRC_POWER);
@@ -464,6 +491,13 @@ void config_3430sdram_ddr(void)
 	/* set up dll */
 	__raw_writel(SDP_SDRC_DLLAB_CTRL, SDRC_DLLA_CTRL);
 	delay(0x2000);	/* give time to lock */
+}
+
+void config_3430sdram_ddr(void)
+{
+	__config_3430sdram_ddr(SZ_256M);
+	if(!mem_size_valid(SZ_256M))
+		__config_3430sdram_ddr(SZ_128M);
 }
 #endif /* CFG_3430SDRAM_DDR */
 
